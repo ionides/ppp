@@ -1,2 +1,2 @@
 # ppp
-Private pypomp repository, for experimentation
+Personal pypomp repository, for experimentation
