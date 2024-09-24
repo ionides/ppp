@@ -7482,35 +7482,92 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="pypomp-on-greatlakes">pypomp on greatlakes<a class="anchor-link" href="#pypomp-on-greatlakes">¶</a></h1><p>The <a href="https://its.umich.edu/advanced-research-computing/high-performance-computing/great-lakes/rates">greatlakes GPUs</a> are a convenient resource for high-performance computing at University of Michigan.</p>
-<p>The greatlakes gpu partition has 52 Nvidia Tesla V100 GPUs. To obtain access to a GPU via an interactive seesion (i.e., a terminal prompt) once can do</p>
-<pre><code>salloc --account=ionides0 --partition=gpu --gpus=v100:1 --cpus-per-gpu=1
+<h1 id="pypomp-on-greatlakes">pypomp on greatlakes<a class="anchor-link" href="#pypomp-on-greatlakes">¶</a></h1><p>The <a href="https://its.umich.edu/advanced-research-computing/high-performance-computing/great-lakes/rates">greatlakes GPUs</a> are a convenient resource for high-performance computing at University of Michigan.
+The greatlakes gpu partition has 52 Nvidia Tesla V100 GPUs.</p>
+<h2 id="Testing-in-an-interactive-session">Testing in an interactive session<a class="anchor-link" href="#Testing-in-an-interactive-session">¶</a></h2><p>To obtain access to a GPU via an interactive seesion (i.e., a terminal prompt) once can do</p>
+<pre><code>salloc --account=ionides0 --partition=gpu --gpus=v100:1 --cpus-per-gpu=1 --mem=8000
 </code></pre>
-<p>I used</p>
+<p>I set up the Python environment on the login node</p>
 <pre><code>module load python
+python -m venv ~/opt/py3.12
+source ~/opt/py3.12/bin/activate
+pip install jax[cuda12]
+pip install pypomp pytest tqdm
+git clone git@github.com:pypomp/pypomp
 </code></pre>
-<p>and built tensorflow and jax locally, e.g.</p>
-<pre><code>pip install tensorflow[and-cuda]
-pip install -U "jax[cuda12]"
+<p>and built jax with cuda:</p>
+<pre><code>pip install -U "jax[cuda12]"
 </code></pre>
 <p>Then install everything else needed,</p>
-<pre><code>pip install tensorflow_probability tqdm tensorrt pypomp
+<pre><code>pip install pypomp pytest tqdm
 </code></pre>
-<p>It seesm that tensorflow and JAX are workig, e.g.,</p>
-<pre><code>python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
-[PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]
-
-python -c "import tensorflow as tf; print(tf.reduce_sum(tf.random.normal([10, 10])))"
-tf.Tensor(2.1833556, shape=(), dtype=float32
-
+<p>At this point, running <code>salloc</code>, as above, starts a machine with a GPU.<br/>
+Then check we have access to the GPUs:</p>
+<pre><code>salloc --account=ionides0 --partition=gpu --gpus=v100:1 --cpus-per-gpu=1 --mem=8000
+nvidia-smi
+</code></pre>
+<p>It is necessary to restart the Python environment for the new machine.
+A simple JAX test is working. 
+So are the pypomp tests.</p>
+<pre><code>module load python
+source ~/opt/py3.12/bin/activate
 python -c "import jax.numpy as np; print(np.ones((3,3)))"
+pytest pypomp/test
 
 </code></pre>
-<p>However, the pypomp tests failed</p>
+<p>The tests took almost 6 minutes to run.</p>
+<p>An earlier test with pympomp 0.0.2 failed, perhaps because of some difficulty with tensorflow (which is not needed for the current pypomp, but was installed anyhow).</p>
+<p>An earlier test with pypomp 0.0.3 failed, perhaps because of using anaconda. There is a rumor that the anaconda distribution can have problems with jax[cuda12].</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=f673e2ab-a13d-42b0-a986-82bda7aca259">
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=34346608-2263-4c7b-a4a7-1691370f0de4">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Testing-a-batch-job">Testing a batch job<a class="anchor-link" href="#Testing-a-batch-job">¶</a></h2><p>Once the Python environment is set up as above, one can replace the interactive session above by a batch job. 
+The following is put in greatlakes.sbat</p>
+<pre><code>#!/bin/bash
+
+#SBATCH --job-name=gpu-pypomp-test
+#SBATCH --mail-user=ionides@umich.edu
+#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --account=ionides0
+#SBATCH --partition=gpu
+#SBATCH --gpus=v100:1
+#SBATCH --cpus-per-gpu=1
+#SBATCH --mem=4GB
+### wall time hours:minutes:seconds
+#SBATCH --time=00:10:00
+
+###   Load software modules
+module load python/3.12.1
+module list
+
+####  Commands your job should run follow this line
+echo "Running on $SLURM_JOB_NODELIST"
+echo "Running in $(pwd)"
+source ~/opt/py3.12/bin/activate
+pytest ~/pypomp/test
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ed833e77-f85b-4cac-b741-96480472eff5">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p>Then, <code>sbatch greatlakes.sbat</code> runs the tests.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=b9fd5d11-1fdd-484d-b2c2-8cff939ff734">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7518,7 +7575,7 @@ python -c "import jax.numpy as np; print(np.ones((3,3)))"
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span>
+<div class="highlight hl-ipython3"><pre><span></span> 
 </pre></div>
 </div>
 </div>
