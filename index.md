@@ -6,5 +6,10 @@ Some draft documents that might later be included in pypomp/pypomp-docs or pypom
 
 * [greatlakes](greatlakes.html). Running the pypomp tests on a greatlakes GPU, either via an interative session or a batch job.
 
+* [tests](tests.html). Ideas for quantitative tests of accuracy, speed and memory usage for pypomp.
+
+
+----------------
+
 
 

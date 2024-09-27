@@ -1,0 +1,73 @@
+<h1 id="quantitative-tests-of-pypomp">Quantitative tests of pypomp</h1>
+<p>We are concerned with accuracy tests to make sure that the code gives
+correct answers (up to small Monte Carlo error) in situations where this
+is knowable. We are also concerned with performance benchmark tests.
+This can involve measuring time, memory requirement, or iterations to
+convergence for a maximization algorithm. Put together, we call these
+<strong>quantitative tests</strong>, or simply <strong>quant
+tests</strong>, to distinguish them from unit tests. Our unit tests, in
+pypomp:pypomp/test, are quick tests designed to check that the code is
+not broken, and to ensure we are told if numerical results change.</p>
+<p>The quant tests can be placed in in a different repository, say,
+pypomp:quant. There are arguments for and against putting them in the
+package repository, pypomp:pypomp. Overall, it is better to keep the
+core code repository small and focused on the software itself. The quant
+tests may become large. The tests don’t necessarily need to be run
+often. If we test for correctness occasionally, it is enough to check
+more quickly and frequently that the results on small examples have not
+changed.</p>
+<h2 id="structure-of-the-tests">Structure of the tests</h2>
+<p>We propose many different short tests, each of which can be run
+independently. Each test produces an html report. An index links these
+results. At a later date, some of these tests could be selected for a
+tutorial or a software announcement publication.</p>
+<p>Each test has its own directory, within which we have a standard file
+structure.</p>
+<ul>
+<li><p>code.py. The test code, which can be run on greatlakes, or
+wherever</p></li>
+<li><p>code.sbat. A slurm batch file for running code.py on
+greatlakes</p></li>
+<li><p>results. A directory with saved results from code.py</p></li>
+<li><p>report.ipynb. A report presenting and discussing the results
+pulled in from the results directory</p></li>
+<li><p>report.html. The rendering of report.ipynb</p></li>
+<li><p>Makefile. To help automate the building of report.html</p></li>
+<li><p>README. A brief overview of the test</p></li>
+</ul>
+<p>Each test should report:</p>
+<ol type="1">
+<li><p>The pypomp/Python/Jax versions used</p></li>
+<li><p>The run time for each calculation. Can we split this into
+compilation vs calculation? We’d need a special facility for this since
+JIT carries out compilation as needed. It might be useful to get GPU vs
+CPU run time for all the tests, since we may start to see patterns in
+efficiency of GPU usage. Comparing with the R-pomp time across these
+tests would also help to discover where we are quicker or slower, and
+give ideas for areas that can use more code optimization.</p></li>
+<li><p>The memory requirement. I’m currently sure how to obtain this.
+Perhaps only a specific set of tests could investigat this, but probably
+once we’ve figured out how to do it, we can easily do it for all tests.
+For R-pomp, calculations have generally been CPU-limited, but the AD
+requires storing a potentially large graph.</p></li>
+<li><p>Numerical results</p></li>
+</ol>
+<h2 id="content-of-the-proposed-tests">Content of the proposed
+tests</h2>
+<p>Much of this is similar to tests that Kevin already has in his ipynb
+files.</p>
+<p><strong>LG1</strong>. Compare pfilter on the LG model with a Kalman
+filter. For this, it would be ideal to have a basic KF in pypomp,
+similar to the one in pomp. As a stop-gap, one could use the R-pomp
+kalman function.</p>
+<p><strong>LG2</strong>. pfilter at various values of N and J. Check
+that the scaling is as expected.</p>
+<p><strong>LG3</strong>. mop-alpha at the same values of N and J. Check
+that the scaling is as expected.</p>
+<p><strong>LG4</strong>. IFAD.</p>
+<p><strong>Dacca1.</strong> Compare pfilter on the Dacca cholera model
+with the R-pomp version, with a fixed set of parameters, presumably the
+same that are used in the dacca R-pomp object.</p>
+<p><strong>Dacca2.</strong> Test IFAD using a pypomp version of the code
+used for the IFAD arXiv paper.</p>
+<hr />
